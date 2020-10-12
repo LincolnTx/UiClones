@@ -1,18 +1,45 @@
-import React, { Children, useRef, useState } from 'react';
-import { AnimeModel } from '../../ModelsContext';
+import React, { useCallback, useRef, useState } from 'react';
+import ModelsContext, { AnimeModel } from '../ModelsContext';
 
-import { Container } from './styles';
+import ModelOverlay from '../ModelOverlay';
+import { Container, OverlaysRoot } from './styles';
 
 const ModelsWrapper: React.FC = ({ children }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   
-  const [registerModels, setRegisterModels] = useState<AnimeModel[]>([]);
+  const [registeredModels, setRegisteredModels] = useState<AnimeModel[]>([]);
+  
+  const registerModel = useCallback((model: AnimeModel) =>{
+    setRegisteredModels(state => [...state, model]);
+  }, []);
 
+  const unregisterModel = useCallback((modelName: string ) => {
+    setRegisteredModels(state => state.filter(model => model.modelName !== modelName));
+  }, []);
+
+  const getModelByName = useCallback((modelName: string ) => {
+    return registeredModels.find(model => model.modelName === modelName) || null;
+  }, [registeredModels]);
 
   return (
-    <Container ref={wrapperRef}>
-      {children}
-    </Container>
+    <ModelsContext.Provider value={{
+      wrapperRef,
+      registeredModels,
+      registerModel,
+      unregisterModel,
+      getModelByName
+    }}>
+      
+      <Container ref={wrapperRef}>
+        <OverlaysRoot>
+          {registeredModels.map(item => (
+            <ModelOverlay key={item.modelName} model={item}>{item.overlayNode}</ModelOverlay>
+          ))}
+        </OverlaysRoot>
+        
+        {children}
+      </Container>
+    </ModelsContext.Provider>
   );
 };
 
